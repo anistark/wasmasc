@@ -137,7 +137,7 @@ impl CommandExecutor {
         let src_path = Path::new(src);
         if !src_path.exists() {
             return Err(PluginError::CompilationFailed {
-                reason: format!("{} build completed but output file not found", lang),
+                reason: format!("{lang} build completed but output file not found"),
             });
         }
 
@@ -153,17 +153,14 @@ pub struct PathResolver;
 
 impl PathResolver {
     pub fn join_paths(base: &str, rel: &str) -> String {
-        Path::new(base)
-            .join(rel)
-            .to_string_lossy()
-            .to_string()
+        Path::new(base).join(rel).to_string_lossy().to_string()
     }
 
     pub fn validate_directory_exists(path: &str) -> PluginResult<()> {
         let p = Path::new(path);
         if !p.is_dir() {
             return Err(PluginError::InvalidProjectStructure {
-                reason: format!("Directory does not exist: {}", path),
+                reason: format!("Directory does not exist: {path}"),
             });
         }
         Ok(())
@@ -288,7 +285,7 @@ impl AscPlugin {
             .unwrap()
             .to_string_lossy()
             .to_string();
-        let wasm_file = Path::new(&config.output_dir).join(format!("{}.wasm", output_name));
+        let wasm_file = Path::new(&config.output_dir).join(format!("{output_name}.wasm"));
 
         println!("🔨 Building with AssemblyScript compiler...");
 
@@ -306,12 +303,8 @@ impl AscPlugin {
             OptimizationLevel::Size => args.extend(&["--optimize", "--shrinkLevel", "2"]),
         }
 
-        let output = CommandExecutor::execute_command(
-            "asc",
-            &args,
-            &config.project_path,
-            config.verbose,
-        )?;
+        let output =
+            CommandExecutor::execute_command("asc", &args, &config.project_path, config.verbose)?;
 
         if !output.status.success() {
             return Err(PluginError::CompilationFailed {
@@ -362,19 +355,15 @@ impl AscPlugin {
             });
         };
 
-        println!("🔨 Building with {}...", cmd);
+        println!("🔨 Building with {cmd}...");
         let args = match cmd {
             "yarn" => vec!["build"],
             "bun" => vec!["run", "build"],
             _ => vec!["run", "build"],
         };
 
-        let output = CommandExecutor::execute_command(
-            cmd,
-            &args,
-            &config.project_path,
-            config.verbose,
-        )?;
+        let output =
+            CommandExecutor::execute_command(cmd, &args, &config.project_path, config.verbose)?;
 
         if !output.status.success() {
             return Err(PluginError::CompilationFailed {
@@ -407,7 +396,8 @@ impl AscPlugin {
             });
         }
 
-        let output_path = CommandExecutor::copy_to_output(&wasm_files[0], &config.output_dir, "AssemblyScript")?;
+        let output_path =
+            CommandExecutor::copy_to_output(&wasm_files[0], &config.output_dir, "AssemblyScript")?;
 
         Ok(BuildResult {
             wasm_path: output_path,
@@ -465,7 +455,9 @@ impl WasmBuilder for AscPlugin {
         let mut missing = Vec::new();
 
         if !CommandExecutor::is_tool_installed("asc") {
-            missing.push("asc (AssemblyScript compiler - install with: npm install -g asc)".to_string());
+            missing.push(
+                "asc (AssemblyScript compiler - install with: npm install -g asc)".to_string(),
+            );
         }
 
         if !CommandExecutor::is_tool_installed("node") {
@@ -511,7 +503,10 @@ impl WasmBuilder for AscPlugin {
         if let Ok(entries) = fs::read_dir(project_path) {
             for entry in entries.flatten() {
                 if let Some(ext) = entry.path().extension() {
-                    if self.supported_extensions().contains(&ext.to_string_lossy().as_ref()) {
+                    if self
+                        .supported_extensions()
+                        .contains(&ext.to_string_lossy().as_ref())
+                    {
                         return true;
                     }
                 }
@@ -584,6 +579,14 @@ pub extern "C" fn create_wasm_builder() -> *mut c_void {
 }
 
 #[no_mangle]
+/// # Safety
+///
+/// This function takes raw pointers as arguments and dereferences them.
+/// Callers must ensure that:
+/// - `builder_ptr` is a valid pointer to an `AscPlugin` instance (or null)
+/// - `project_path` is a valid null-terminated C string (or null)
+///
+/// If either pointer is null, the function returns `false`.
 pub unsafe extern "C" fn wasmasc_can_handle_project(
     builder_ptr: *const c_void,
     project_path: *const c_char,
@@ -602,6 +605,16 @@ pub unsafe extern "C" fn wasmasc_can_handle_project(
 }
 
 #[no_mangle]
+/// # Safety
+///
+/// This function takes raw pointers as arguments and dereferences them.
+/// Callers must ensure that:
+/// - `builder_ptr` is a valid pointer to an `AscPlugin` instance (or null)
+/// - `config` is a valid pointer to a `BuildConfigC` struct (or null)
+/// - All C string pointers in `config` are valid null-terminated strings
+///
+/// Returns a pointer to an owned `BuildResultC` that must be freed by the caller.
+/// If either pointer is null, returns null.
 pub unsafe extern "C" fn wasmasc_build(
     builder_ptr: *const c_void,
     config: *const BuildConfigC,
@@ -658,7 +671,7 @@ pub unsafe extern "C" fn wasmasc_build(
             Box::into_raw(result_c)
         }
         Err(e) => {
-            let error_msg = CString::new(format!("{}", e)).unwrap_or_default();
+            let error_msg = CString::new(format!("{e}")).unwrap_or_default();
             let result_c = Box::new(BuildResultC {
                 wasm_path: ptr::null_mut(),
                 js_path: ptr::null_mut(),
@@ -673,6 +686,14 @@ pub unsafe extern "C" fn wasmasc_build(
 }
 
 #[no_mangle]
+/// # Safety
+///
+/// This function takes raw pointers as arguments and dereferences them.
+/// Callers must ensure that:
+/// - `builder_ptr` is a valid pointer to an `AscPlugin` instance (or null)
+/// - `project_path` is a valid null-terminated C string (or null)
+///
+/// If either pointer is null, the function returns `false`.
 pub unsafe extern "C" fn wasmasc_clean(
     builder_ptr: *const c_void,
     project_path: *const c_char,
@@ -691,6 +712,14 @@ pub unsafe extern "C" fn wasmasc_clean(
 }
 
 #[no_mangle]
+/// # Safety
+///
+/// This function takes a raw pointer and dereferences it.
+/// Callers must ensure that:
+/// - `builder_ptr` is a valid pointer to an `AscPlugin` instance (or null)
+///
+/// Returns a pointer to a cloned `AscPlugin` that must be freed by the caller.
+/// If the pointer is null, returns null.
 pub unsafe extern "C" fn wasmasc_clone_box(builder_ptr: *const c_void) -> *mut c_void {
     if builder_ptr.is_null() {
         return ptr::null_mut();
@@ -702,6 +731,15 @@ pub unsafe extern "C" fn wasmasc_clone_box(builder_ptr: *const c_void) -> *mut c
 }
 
 #[no_mangle]
+/// # Safety
+///
+/// This function takes a raw mutable pointer and deallocates it.
+/// Callers must ensure that:
+/// - `builder_ptr` is a pointer previously returned by `wasmasc_plugin_create` or `wasmasc_clone_box`
+/// - The pointer is not used after this call
+/// - The pointer is not freed again (double-free is undefined behavior)
+///
+/// If the pointer is null, this function does nothing (safe).
 pub unsafe extern "C" fn wasmasc_drop(builder_ptr: *mut c_void) {
     if !builder_ptr.is_null() {
         let _ = Box::from_raw(builder_ptr as *mut AscPlugin);
