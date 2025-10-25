@@ -1,0 +1,59 @@
+[package]
+name = "wasmasc"
+version = "0.1.0"
+edition = "2021"
+authors = ["Kumar Anirudha <wasm@anirudha.dev>"]
+description = "AssemblyScript WebAssembly plugin for Wasmrun - compile AssemblyScript projects to WebAssembly"
+homepage = "https://github.com/anistark/wasmasc"
+repository = "https://github.com/anistark/wasmasc"
+license = "MIT"
+keywords = ["webassembly", "wasm", "assemblyscript", "asc", "wasmrun"]
+categories = ["development-tools", "web-programming"]
+readme = "README.md"
+
+[lib]
+name = "wasmasc"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "wasmasc"
+required-features = ["cli"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.9.8"
+thiserror = "1.0"
+clap = { version = "4.0", features = ["derive"], optional = true }
+
+[features]
+default = []
+cli = ["clap"]
+
+[dev-dependencies]
+tempfile = "3.0"
+
+[package.metadata.wasm_plugin]
+name = "asc"
+extensions = ["ts"]
+entry_files = ["assembly/index.ts", "assembly/main.ts", "index.ts", "package.json"]
+
+[package.metadata.wasm_plugin.capabilities]
+supported_languages = ["assemblyscript", "asc"]
+compile_wasm = true
+compile_webapp = false
+live_reload = true
+optimization = true
+custom_targets = ["wasm"]
+
+[package.metadata.wasm_plugin.dependencies]
+tools = ["asc", "node"]
+optional_tools = ["npm", "yarn", "pnpm", "bun"]
+
+[package.metadata.wasm_plugin.exports]
+create_wasm_builder = "create_wasm_builder"
+can_handle_project = "wasmasc_can_handle_project"
+build = "wasmasc_build"
+clean = "wasmasc_clean"
+clone_box = "wasmasc_clone_box"
+drop = "wasmasc_drop"
+plugin_create = "wasmasc_plugin_create"
