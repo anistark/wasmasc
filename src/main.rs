@@ -116,7 +116,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         Commands::CanHandle { project } => {
-            if plugin.can_handle_project(&project) {
+            if Plugin::can_handle_project(&plugin, &project) {
                 println!("✅ Yes, wasmasc can handle this project");
             } else {
                 println!("❌ No, wasmasc cannot handle this project");

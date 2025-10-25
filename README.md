@@ -42,6 +42,23 @@ wasmasc check-deps
 wasmasc can-handle ./my-project
 ```
 
+## Development
+
+Use `just` commands for common development tasks:
+
+```sh
+just dev          # Quick development cycle (format, lint, test, build-cli)
+just format       # Format code
+just lint         # Lint code
+just test         # Run tests
+just build        # Build library
+just build-cli    # Build with CLI feature
+just clean        # Clean build artifacts
+just install-cli  # Install locally
+```
+
+Run `just --list` to see all available commands.
+
 ## Project Structure
 
 Supports standard AssemblyScript project layouts:
